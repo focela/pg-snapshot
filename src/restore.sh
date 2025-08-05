@@ -41,17 +41,18 @@ if [ $# -eq 1 ]; then
   backup_key_suffix="${BACKUP_FILE_NAME}_${restore_timestamp}${backup_file_extension}"
 else
   echo "Finding latest backup..."
-  # List backups and extract just the filename without prefix
+  # List backups using S3 API to get proper LastModified timestamps
   backup_key_suffix=$(
-    aws $aws_cli_args s3 ls "${s3_uri_base}/${BACKUP_FILE_NAME}" \
-      | sort \
-      | tail -n 1 \
-      | awk '{ print $4 }' \
+    aws $aws_cli_args s3api list-objects \
+      --bucket "${S3_BUCKET}" \
+      --prefix "${S3_PREFIX}/${BACKUP_FILE_NAME}_" \
+      --query "sort_by(Contents, &LastModified)[-1].Key" \
+      --output text \
       | sed "s|^${S3_PREFIX}/||"
   )
   
   # Check if backup was found
-  if [ -z "$backup_key_suffix" ]; then
+  if [ -z "$backup_key_suffix" ] || [ "$backup_key_suffix" = "None" ]; then
     echo "Error: No backup files found in S3 bucket ${S3_BUCKET} with prefix ${S3_PREFIX}/${BACKUP_FILE_NAME}"
     exit 1
   fi
