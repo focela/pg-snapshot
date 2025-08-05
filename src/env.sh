@@ -35,6 +35,12 @@ if [ -z "$BACKUP_FILE_NAME" ]; then
   exit 1
 fi
 
+# Check if S3_REGION environment variable is set
+if [ -z "$S3_REGION" ]; then
+  echo "You need to set the S3_REGION environment variable."
+  exit 1
+fi
+
 #-----------------------------------------------------------------------------
 # AWS CLI CONFIGURATION
 #-----------------------------------------------------------------------------

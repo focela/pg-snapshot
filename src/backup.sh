@@ -111,10 +111,10 @@ if [ -n "$BACKUP_KEEP_DAYS" ]; then
       # List and remove old backup objects from S3
       aws $aws_cli_args s3api list-objects \
         --bucket "${S3_BUCKET}" \
-        --prefix "${S3_PREFIX}" \
+        --prefix "${S3_PREFIX}/${BACKUP_FILE_NAME}_" \
         --query "${old_backups_query}" \
         --output text \
-        | xargs -n1 -t -I 'KEY' aws $aws_cli_args s3 rm s3://"${S3_BUCKET}"/'KEY'
+        | xargs -n1 -t -I KEY aws $aws_cli_args s3 rm s3://"${S3_BUCKET}"/KEY
       echo "Removal complete."
     fi
   fi

@@ -41,12 +41,20 @@ if [ $# -eq 1 ]; then
   backup_key_suffix="${BACKUP_FILE_NAME}_${restore_timestamp}${backup_file_extension}"
 else
   echo "Finding latest backup..."
+  # List backups and extract just the filename without prefix
   backup_key_suffix=$(
     aws $aws_cli_args s3 ls "${s3_uri_base}/${BACKUP_FILE_NAME}" \
       | sort \
       | tail -n 1 \
-      | awk '{ print $4 }'
+      | awk '{ print $4 }' \
+      | sed "s|^${S3_PREFIX}/||"
   )
+  
+  # Check if backup was found
+  if [ -z "$backup_key_suffix" ]; then
+    echo "Error: No backup files found in S3 bucket ${S3_BUCKET} with prefix ${S3_PREFIX}/${BACKUP_FILE_NAME}"
+    exit 1
+  fi
 fi
 
 #-----------------------------------------------------------------------------
@@ -54,7 +62,7 @@ fi
 #-----------------------------------------------------------------------------
 # Download backup file from S3
 echo "Fetching backup from S3..."
-aws $aws_cli_args s3 cp "${s3_uri_base}/${backup_key_suffix}" "${BACKUP_FILE_NAME}${backup_file_extension}"
+aws $aws_cli_args s3 cp "s3://${S3_BUCKET}/${S3_PREFIX}/${backup_key_suffix}" "${BACKUP_FILE_NAME}${backup_file_extension}"
 
 # Decrypt backup if GPG passphrase is provided
 if [ -n "$GPG_PASSPHRASE" ]; then
